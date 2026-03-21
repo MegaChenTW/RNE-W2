@@ -1,7 +1,24 @@
 # Notices
 
-the reason why diff_drive don't work anymore is that it rely on the long_controller_pid.py.
-However once modify it now returns a instead of v. so we can't do nothing about it I guess.
+## PID tuning
+
+
+    Bicycle PID: 
+        kp, ki, kd = 1, 0.6, 0.6
+        err: 目標點相對於車頭朝向（車體座標系）的橫向誤差（Lateral Error）
+        ```python
+        theta_target = np.arctan2(target[1] - y, target[0] - x)
+        theta_err = theta_target - np.deg2rad(yaw)
+
+        target_dist = np.hypot(target[0] - x, target[1] - y)
+        err = target_dist * np.sin(theta_err)
+        ```
+
+## Hint
+
+How the program choose simulator, kinematic model, and controller.
+
+### Knowing this will make you understand the structure faster
 
 ```python
 # in navigation.py:

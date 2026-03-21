@@ -8,10 +8,10 @@ class ControllerPIDBasic(Controller):
     def __init__(self, 
                  model, 
                  # TODO 4.1.2: Tune PID Gains
-                 # high score 3.0,1.7,0.8 : 2.0893
-                 kp=3.0, 
-                 ki=1.7, 
-                 kd=0.8):
+                 # high score 0.85, 0.1, 0.9 : 0.3055
+                 kp=0.85, 
+                 ki=0.1, 
+                 kd=0.9):
         self.path = None
         self.kp = kp
         self.ki = ki

@@ -7,7 +7,7 @@ from PathTracking.controller import Controller
 class ControllerPurePursuitBicycle(Controller):
     def __init__(self, model, 
                  # TODO 4.3.1: Tune Pure Pursuit Gain
-                 kp=5, Lfc=0.3):
+                 kp=0.1, Lfc=0.5):
         self.path = None
         self.kp = kp
         self.Lfc = Lfc
@@ -39,7 +39,8 @@ class ControllerPurePursuitBicycle(Controller):
         Ld = self.kp*v + self.Lfc
         
         # TODO 4.3.1: Pure Pursuit Control for Bicycle Kinematic Model
-        target_idx = self.current_idx
+        # 預設目標點為路徑終點，避免 Ld 太大時找不到點而瞄準腳下
+        target_idx = len(self.path) - 1 
         for i in range(self.current_idx, len(self.path)):
             dist = np.sqrt((self.path[i][0] - x) **2 + (self.path[i][1] - y) **2)
             if(dist >= Ld):
@@ -48,8 +49,12 @@ class ControllerPurePursuitBicycle(Controller):
         
         tx, ty = self.path[target_idx][0], self.path[target_idx][1]
         
-        alpha = np.atan2(ty - y, tx - x) - yaw
+        # 1. 確保 yaw 轉為弧度參與運算
+        alpha = np.atan2(ty - y, tx - x) - np.deg2rad(yaw)
+        # 將 alpha 收斂到 [-pi, pi] 之間，避免 360 度邊界突變
+        alpha = np.arctan2(np.sin(alpha), np.cos(alpha))
 
-        next_delta = np.atan2(2.0 * self.l *np.sin(alpha), Ld)
+        # 2. Pure Pursuit 公式算出來為弧度，需轉為 Degree 交給模擬器
+        next_delta = np.rad2deg(np.arctan2(2.0 * self.l * np.sin(alpha), Ld))
         # [end] TODO 4.3.1
         return next_delta

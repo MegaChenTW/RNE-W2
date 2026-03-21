@@ -7,14 +7,10 @@ from PathTracking.controller import Controller
 class ControllerPIDBicycle(Controller):
     def __init__(self, model, 
                  # TODO 4.1.3: Tune PID Gains
-                 # --- TUNING GUIDE ---
-                 # 1. Set ki to 0.
-                 # 2. Increase kp until the car oscillates predictably.
-                 # 3. Increase kd to dampen the oscillations and reduce overshoot.
-                 # 4. Once kp/kd are good, add a tiny ki if needed to fix persistent small errors.
-                 kp=2.0,  # Start with a moderate Kp.
-                 ki=0,  # ALWAYS START TUNING WITH KI = 0.
-                 kd=0.1): # A good starting Kd is often ~half of Kp.
+                 # 2.5 0.6 0.6 : 0.5130
+                 kp=2.5,
+                 ki=0.6,  
+                 kd=0.6):
         self.path = None
         self.kp = kp
         self.ki = ki
@@ -49,12 +45,20 @@ class ControllerPIDBicycle(Controller):
         self.current_idx = min_idx
         
         # TODO 4.1.3: PID Control for Bicycle Kinematic Model
-        target = self.path[min_idx]
-        dy = target[1] - y
-        dx = target[0] - x
-        target_yaw = target[2]
-        err = dy * np.cos(target_yaw) - dx * np.sin(target_yaw)
+        # 1. 前瞻目標點 (Lookahead)：往前方看向幾個點，解決離散跳動造成的 Kd 震盪
+        target_idx = min(min_idx + 2, len(self.path) - 1)
+        target = self.path[target_idx]
+        
+        theta_target = np.arctan2(target[1] - y, target[0] - x)
+        theta_err = theta_target - np.deg2rad(yaw)
+        
+        target_dist = np.hypot(target[0] - x, target[1] - y)
+        err = target_dist * np.sin(theta_err)
+        
         self.acc_ep += err * self.dt
+        # 限制出彎時 Ki 累積的極限值
+        #self.acc_ep = np.clip(self.acc_ep, -15.0, 15.0)
+        
         next_delta = self.kp * err + self.ki * self.acc_ep + self.kd * (err - self.last_ep) / self.dt
         self.last_ep = err
 

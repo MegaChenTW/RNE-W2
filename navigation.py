@@ -137,9 +137,9 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
         if k == 27:
             print()
             break
-        if has_finished:
-            print()
-            break
+        #if has_finished:
+        #    print()
+        #    break
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
