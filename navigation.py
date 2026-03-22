@@ -241,6 +241,8 @@ def load_and_process_track(track_name, map_w, map_h, simulator):
     # Velocity Profiling
     v_ref, k = generate_speed_profile(path_x, path_y, max_v=85.0, max_lat_acc=30, max_long_acc=12, max_long_dec=18)
     # Waypoint Sampling
+    # FEATURE: increase sampling
+    # wp_x, wp_y, wp_v = adaptive_sampling(path_x, path_y, k, v_ref=v_ref, min_ds=2.0, max_ds=10.0, k_gain=200.0)
     wp_x, wp_y, wp_v = adaptive_sampling(path_x, path_y, k, v_ref=v_ref, min_ds=2.0, max_ds=10.0, k_gain=200.0)
     
     wp_yaw = np.zeros_like(wp_x)

@@ -64,6 +64,7 @@ def generate_speed_profile(path_x, path_y, max_v=20.0, max_lat_acc=2.0, max_long
     # [end] TODO 3.1.b
     v_ref[0] = 5.0
     v_ref[-1] = 0.0
+    # TODO 3.1.c
     # Forward pass: limit acceleration
     for i in range(1, len(v_ref)):
         v_ref[i] = min(v_ref[i], np.sqrt(v_ref[i-1]**2 + 2 * max_long_acc * ds[i-1]))
@@ -72,7 +73,6 @@ def generate_speed_profile(path_x, path_y, max_v=20.0, max_lat_acc=2.0, max_long
     for i in range(len(v_ref)-2, -1, -1):
         v_ref[i] = min(v_ref[i], np.sqrt(v_ref[i+1]**2 + 2 * max_long_dec * ds[i]))
     # TODO 3.1.c Longitudinal Smoothing
-    
     pass
     # [end] TODO 3.1.c
 
@@ -106,6 +106,13 @@ def adaptive_sampling(px, py, curvature, v_ref=None, min_ds=3.0, max_ds=100.0, k
             if v_ref is not None:
                 sv.append(v_ref[i])
             acc_s = 0.0
+                
+    # Boundary Condition: 強制保留真正的最後一個點（確保能平滑煞車到 0）
+    if sx[-1] != px[-1] or sy[-1] != py[-1]:
+        sx.append(px[-1])
+        sy.append(py[-1])
+        if v_ref is not None:
+            sv.append(v_ref[-1])
             
     if v_ref is not None:
         return np.array(sx), np.array(sy), np.array(sv)
@@ -137,6 +144,13 @@ def uniform_sampling(px, py, v_ref=None, step_ds=5.0):
             if v_ref is not None:
                 sv.append(v_ref[i])
             acc_s = 0.0
+                
+    # Boundary Condition: 強制保留真正的最後一個點
+    if sx[-1] != px[-1] or sy[-1] != py[-1]:
+        sx.append(px[-1])
+        sy.append(py[-1])
+        if v_ref is not None:
+            sv.append(v_ref[-1])
             
     if v_ref is not None:
         return np.array(sx), np.array(sy), np.array(sv)

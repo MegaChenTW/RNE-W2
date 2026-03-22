@@ -8,9 +8,14 @@ class ControllerLQRBasic(Controller):
     def __init__(self, model, Q=np.eye(2), R=np.eye(1)):
         self.path = None
         self.Q = Q
-        self.Q[0,0] = 100
-        self.Q[1,1] = 5
-        self.R = R*2000
+        
+        # 橫向誤差：越大修正越積極
+        self.Q[0,0] = 600
+        # 航向角誤差：越大車頭越快對齊軌跡
+        self.Q[1,1] = 10
+        # 控制力道 越大轉向越平緩/遲鈍
+        self.R = R * 100
+        
         self.pe = 0
         self.pth_e = 0
         self.dt = model.dt
@@ -52,6 +57,46 @@ class ControllerLQRBasic(Controller):
         target = self.path[min_idx]
         
         # Optional TODO: LQR Control for Basic Kinematic Model
-        # You can implement this if you want to use LQR for basic kinematic model in F1 Challenge
-        next_w = 0
+        # 1. 計算狀態誤差 (State Errors)
+        theta_path = np.deg2rad(target[2])
+        
+        dx = x - target[0]
+        dy = y - target[1]
+        
+        # 橫向誤差 (Cross-track error, e)
+        e = dx * (-np.sin(theta_path)) + dy * np.cos(theta_path)
+        
+        # 航向角誤差 (Heading error, theta_e)
+        theta_e_deg = utils.angle_norm(yaw - target[2])
+        theta_e = np.deg2rad(theta_e_deg)
+        
+        state_err = np.array([[e], [theta_e]])
+        
+        # 2. 建立離散狀態空間矩陣 A, B
+        A = np.array([
+            [1.0, v * self.dt],
+            [0.0, 1.0]
+        ])
+        B = np.array([
+            [0.0],
+            [self.dt]
+        ])
+        
+        # 3. 遞迴解 DARE 找出 P
+        P = self._solve_DARE(A, B, self.Q, self.R)
+        
+        # 4. 計算最佳回饋增益 K
+        temp = np.linalg.inv(self.R + B.T @ P @ B)
+        K = temp @ B.T @ P @ A
+        
+        # 5. 計算控制輸入 u
+        u = -K @ state_err
+        
+        # 6. 加上前饋控制 (Feedforward) 並轉為度數輸出
+        kappa = target[3]
+        w_ref = v * kappa # 前饋角速度 (rad/s)
+        
+        w_rad = w_ref + u[0, 0]
+        next_w = np.rad2deg(w_rad)
+        
         return next_w
